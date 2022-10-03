@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "hardhat/console.sol";
 
-contract Marketplace is ReentrancyGuard {
+contract Marketplace is ReentrancyGuard { //A modifier that can prevent reentrancy during certain functions.
 
     // Variables
     address payable public immutable feeAccount; // the account that receives fees
@@ -26,9 +26,10 @@ contract Marketplace is ReentrancyGuard {
     // itemId -> Item
     mapping(uint => Item) public items;
 
+    //https://ethereum.stackexchange.com/questions/40396/can-somebody-please-explain-the-concept-of-event-indexing
     event Offered(
         uint itemId,
-        address indexed nft,
+        address indexed nft, 
         uint tokenId,
         uint price,
         address indexed seller
@@ -52,7 +53,8 @@ contract Marketplace is ReentrancyGuard {
         require(_price > 0, "Price must be greater than zero");
         // increment itemCount
         itemCount ++;
-        // transfer nft
+
+        // transfer nft  Transfers a specific NFT (tokenId) from one account (from) to another (to).
         _nft.transferFrom(msg.sender, address(this), _tokenId);
         // add new item to items mapping
         items[itemCount] = Item (
@@ -64,6 +66,12 @@ contract Marketplace is ReentrancyGuard {
             false
         );
         // emit Offered event
+        // kích hoạt một sự kiện để cho ứng dụng biết chức năng đã được gọi
+
+        /*YourContract.IntegersAdded(function(error, result) {
+         làm gì đó với kết quả thu được
+        })*/
+
         emit Offered(
             itemCount,
             address(_nft),
@@ -97,6 +105,7 @@ contract Marketplace is ReentrancyGuard {
         );
     }
     function getTotalPrice(uint _itemId) view public returns(uint){
+        //view nghĩa là function cần xem một vài biến của Contract, mà không được thay đổi nó
         return((items[_itemId].price*(100 + feePercent))/100);
     }
 }

@@ -44,7 +44,7 @@ export default function MyListedItems({ marketplace, nft, account }) {
         // define listed item object
         let item = {
           totalPrice,
-          price: i.price,
+          price: i.price, 
           itemId: i.itemId,
           name: metadata.name,
           description: metadata.description,

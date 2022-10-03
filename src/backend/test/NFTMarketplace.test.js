@@ -1,6 +1,6 @@
 const { expect } = require("chai"); 
 
-const toWei = (num) => ethers.utils.parseEther(num.toString())
+const toWei = (num) => ethers.utils.parseEther(num.toString())  // 1eth = 10*100000000 wei
 const fromWei = (num) => ethers.utils.formatEther(num)
 
 describe("NFTMarketplace", function () {
@@ -16,11 +16,11 @@ describe("NFTMarketplace", function () {
   let feePercent = 1;
   let URI = "sample URI"
 
-  beforeEach(async function () {
+  beforeEach(async function () {  //beforeEach()được chạy trước mỗi thử nghiệm trong một describe
     // Get the ContractFactories and Signers here.
     NFT = await ethers.getContractFactory("NFT");
     Marketplace = await ethers.getContractFactory("Marketplace");
-    [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
+    [deployer, addr1, addr2, ...addrs] = await ethers.getSigners(); //return an array with 20 signers
 
     // To deploy our contracts
     nft = await NFT.deploy();
@@ -60,7 +60,7 @@ describe("NFTMarketplace", function () {
     });
   })
 
-  describe("Making marketplace items", function () {
+  describe("Making marketplace items", function () { 
     let price = 1
     let result 
     beforeEach(async function () {

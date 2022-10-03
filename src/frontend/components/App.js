@@ -41,6 +41,7 @@ function App() {
       await web3Handler()
     })
     loadContracts(signer)
+    
   }
   const loadContracts = async (signer) => {
     // Get deployed copies of contracts
@@ -49,6 +50,10 @@ function App() {
     const nft = new ethers.Contract(NFTAddress.address, NFTAbi.abi, signer)
     setNFT(nft)
     setLoading(false)
+
+    console.log('ntf contract: ', nft);
+    console.log('marketplace contract: ', marketplace);
+
   }
 
   return (

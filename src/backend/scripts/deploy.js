@@ -1,20 +1,19 @@
-async function main() {
-  const [deployer] = await ethers.getSigners();
+const main = async () => {
+  // const NFTFactory = await ethers.getContractFactory("NFT");
+  // const NFTContract = await NFTFactory.deploy();
 
-  console.log("Deploying contracts with the account:", deployer.address);
-  console.log("Account balance:", (await deployer.getBalance()).toString());
+  // await NFTContract.deployed();
 
-  
-  // Get the ContractFactories and Signers here.
-  const NFT = await ethers.getContractFactory("NFT");
-  const Marketplace = await ethers.getContractFactory("Marketplace");
-  // deploy contracts
-  const marketplace = await Marketplace.deploy(1);
-  const nft = await NFT.deploy();
-  // Save copies of each contracts abi and address to the frontend.
-  saveFrontendFiles(marketplace , "Marketplace");
-  saveFrontendFiles(nft , "NFT");
-}
+  // console.log("NFT address: ", NFTContract.address);
+
+  const MarketplaceFactory = await ethers.getContractFactory("Marketplace");
+  const MarketplaceContract = await MarketplaceFactory.deploy(1);
+
+  await MarketplaceContract.deployed();
+
+  console.log("Marketplace address: ", MarketplaceContract.address);
+};
+
 
 function saveFrontendFiles(contract, name) {
   const fs = require("fs");
@@ -37,9 +36,14 @@ function saveFrontendFiles(contract, name) {
   );
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
+const runMain = async () => {
+  try {
+    await main();
+    process.exit(0);
+  } catch (error) {
     console.error(error);
     process.exit(1);
-  });
+  }
+};
+
+runMain();
