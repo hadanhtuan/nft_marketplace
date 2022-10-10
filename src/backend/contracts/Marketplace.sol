@@ -7,105 +7,158 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "hardhat/console.sol";
 
-contract Marketplace is ReentrancyGuard { //A modifier that can prevent reentrancy during certain functions.
-
+contract Marketplace is ReentrancyGuard {//A modifier that can prevent reentrancy during certain functions.
     // Variables
-    address payable public immutable feeAccount; // the account that receives fees
-    uint public immutable feePercent; // the fee percentage on sales 
-    uint public itemCount; 
+    uint256 public itemCount;
 
     struct Item {
-        uint itemId;
+        uint256 itemId;
         IERC721 nft;
-        uint tokenId;
-        uint price;
+        uint256 tokenId;
+        uint256 startPrice;
         address payable seller;
-        bool sold;
+        bool isSold;
+        bool isStarted;
+        uint256 endAt;
+        address payable highestBidder;
+        uint256 highestBid;
+        address[] bidderAddress;
+        mapping(address => uint256) bids; 
     }
 
     // itemId -> Item
-    mapping(uint => Item) public items;
+    mapping(uint256 => Item) public items;
+
 
     //https://ethereum.stackexchange.com/questions/40396/can-somebody-please-explain-the-concept-of-event-indexing
     event Offered(
-        uint itemId,
-        address indexed nft, 
-        uint tokenId,
-        uint price,
-        address indexed seller
-    );
-    event Bought(
-        uint itemId,
+        uint256 itemId,
         address indexed nft,
-        uint tokenId,
-        uint price,
+        uint256 tokenId,
+        uint256 price,
         address indexed seller,
-        address indexed buyer
+        bool isSold,
+        bool isStarted,
+        uint256 endAt,
+        uint256 highestBid
     );
-
-    constructor(uint _feePercent) {
-        feeAccount = payable(msg.sender);
-        feePercent = _feePercent;
-    }
+    event StartAuction(
+        bool isStarted
+    );
+    event Bid(
+        uint256 itemId,
+        address indexed highestBidder,
+        uint highestBid
+    );
 
     // Make item to offer on the marketplace
-    function makeItem(IERC721 _nft, uint _tokenId, uint _price) external nonReentrant {
-        require(_price > 0, "Price must be greater than zero");
+    function makeItem(IERC721 _nft, uint256 _tokenId, uint256 _startPrice) external nonReentrant {
+        require(_startPrice > 0, "Price must be greater than zero");
         // increment itemCount
-        itemCount ++;
 
         // transfer nft  Transfers a specific NFT (tokenId) from one account (from) to another (to).
         _nft.transferFrom(msg.sender, address(this), _tokenId);
-        // add new item to items mapping
-        items[itemCount] = Item (
-            itemCount,
-            _nft,
-            _tokenId,
-            _price,
-            payable(msg.sender),
-            false
-        );
-        // emit Offered event
-        // kích hoạt một sự kiện để cho ứng dụng biết chức năng đã được gọi
 
-        /*YourContract.IntegersAdded(function(error, result) {
-         làm gì đó với kết quả thu được
-        })*/
 
-        emit Offered(
-            itemCount,
-            address(_nft),
-            _tokenId,
-            _price,
-            msg.sender
-        );
+        itemCount++;
+
+        Item storage it = items[itemCount];
+
+        it.itemId = itemCount;
+        it.nft = _nft;
+        it.tokenId = _tokenId;
+        it.startPrice = _startPrice;
+        it.seller = payable(msg.sender);
+        it.isSold = false;
+        it.isStarted = false;
+        it.endAt = 0;
+        it.highestBidder = payable(address(0));
+        it.highestBid = 0;
+
+
+        emit Offered(itemCount, address(_nft), _tokenId, _startPrice, msg.sender, items[itemCount].isSold, items[itemCount].isStarted, items[itemCount].endAt, 
+        items[itemCount].highestBid);
     }
 
-    function purchaseItem(uint _itemId) external payable nonReentrant {
-        uint _totalPrice = getTotalPrice(_itemId);
+    function startAuction(uint _itemId, uint256 _endAt) external nonReentrant {
+        items[_itemId].isStarted = true;
+        items[_itemId].endAt = block.timestamp + _endAt;
+
+        emit StartAuction(items[_itemId].isStarted);
+    }
+
+    function stopAuction(uint _itemId) external nonReentrant {
+        items[_itemId].isStarted = false;
+    }
+
+    function bid(uint256 _itemId) external payable{
         Item storage item = items[_itemId];
-        require(_itemId > 0 && _itemId <= itemCount, "item doesn't exist");
-        require(msg.value >= _totalPrice, "not enough ether to cover item price and market fee");
-        require(!item.sold, "item already sold");
-        // pay seller and feeAccount
-        item.seller.transfer(item.price);
-        feeAccount.transfer(_totalPrice - item.price);
-        // update item to sold
-        item.sold = true;
-        // transfer nft to buyer
-        item.nft.transferFrom(address(this), msg.sender, item.tokenId);
-        // emit Bought event
-        emit Bought(
+
+        requir _itemId <=e(!item.isSold, "item already sold");
+        require(item.isStarted, "not started");
+        require(block.timestamp < item.endAt, "auction ended");
+        require(_itemId > 0 && itemCount, "item doesn't exist");
+        require( msg.value + item.bids[msg.sender] >= item.highestBid, "not enough eth to bid");   //bug: item.highestBid = 0
+
+        if (item.highestBidder != address(0)) {
+            item.bids[item.highestBidder] = item.highestBid;                      
+            item.bidderAddress.push(item.highestBidder);
+        }
+
+        item.highestBidder = payable(msg.sender);
+        item.highestBid = msg.value;
+
+        emit Bid(
             _itemId,
-            address(item.nft),
-            item.tokenId,
-            item.price,
-            item.seller,
-            msg.sender
+            item.highestBidder,
+            item.highestBid
         );
     }
-    function getTotalPrice(uint _itemId) view public returns(uint){
-        //view nghĩa là function cần xem một vài biến của Contract, mà không được thay đổi nó
-        return((items[_itemId].price*(100 + feePercent))/100);
+
+    function getBid(uint _itemId, address addr) public view returns(uint) {
+        return items[_itemId].bids[addr];
+    }
+
+    function getBidderAddress(uint _itemId, uint index) public view returns(address) {
+        return items[_itemId].bidderAddress[index];
+    }
+
+    // function withdraw(uint256 _itemId) external nonReentrant {
+    //     Item storage item = items[_itemId];
+
+    //     require(item.bids[msg.sender]>0, "already withdraw");
+
+    //     uint256 balance = item.bids[msg.sender];
+    //     item.bids[msg.sender] = 0;
+
+    //     payable(msg.sender).transfer(balance);
+    //     //emit
+    // }
+
+    function endAuction(uint256 _itemId) external nonReentrant {
+        Item storage item = items[_itemId];
+        // require(item.isStarted, "not started");  //bug logic
+        // require(block.timestamp >= item.endAt, "not ended");
+       
+        if (item.highestBidder != address(0)) {
+            item.seller.transfer(item.highestBid);
+            // transfer nft to buyer
+            item.nft.transferFrom(address(this), item.highestBidder, item.tokenId);
+            item.isSold = true;
+
+            for(uint i=0; i<item.bidderAddress.length; i++) {
+                address currAddress = item.bidderAddress[i]; 
+
+                if(item.bids[currAddress] > 0) {
+                    uint256 balance = item.bids[currAddress];
+                    item.bids[currAddress] = 0;
+                    payable(currAddress).transfer(balance);
+                }
+            }
+        }
+
+        item.isStarted = false;
+
+        //emit
     }
 }
