@@ -42,6 +42,7 @@ function App() {
     })
     loadContracts(signer)
     
+    
   }
   const loadContracts = async (signer) => {
     // Get deployed copies of contracts

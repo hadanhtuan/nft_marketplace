@@ -1,19 +1,22 @@
 const main = async () => {
-  // const NFTFactory = await ethers.getContractFactory("NFT");
-  // const NFTContract = await NFTFactory.deploy();
+  const NFTFactory = await ethers.getContractFactory("NFT");
+  const NFTContract = await NFTFactory.deploy();
 
-  // await NFTContract.deployed();
+  await NFTContract.deployed();
 
-  // console.log("NFT address: ", NFTContract.address);
+  console.log("NFT address: ", NFTContract.address);
+  saveFrontendFiles(NFTContract , "NFT");
 
-  const MarketplaceFactory = await ethers.getContractFactory("Marketplace");
-  const MarketplaceContract = await MarketplaceFactory.deploy(1);
 
-  await MarketplaceContract.deployed();
+  // const MarketplaceFactory = await ethers.getContractFactory("Marketplace");
+  // const MarketplaceContract = await MarketplaceFactory.deploy();
 
-  console.log("Marketplace address: ", MarketplaceContract.address);
+  // await MarketplaceContract.deployed();
+
+  // console.log("Marketplace address: ", MarketplaceContract.address);
+  // saveFrontendFiles(MarketplaceContract , "Marketplace");
 };
-
+ 
 
 function saveFrontendFiles(contract, name) {
   const fs = require("fs");

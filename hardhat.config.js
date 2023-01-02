@@ -13,9 +13,8 @@ module.exports = {
     goerli: {
       url: process.env.REACT_APP_ALC_URL,
       accounts: [process.env.REACT_APP_ALC_PRI_KEY],
-      gas: 2100000,
-      gasPrice: 8000000000,
       saveDeployments: true,
+      allowUnlimitedContractSize: true
     },
   },
 };
